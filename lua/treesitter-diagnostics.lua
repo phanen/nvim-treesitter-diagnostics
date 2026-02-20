@@ -1,5 +1,5 @@
 -- SPDX-License-Identifier: MIT
--- Copyright 2025 Jorenar
+-- Copyright 2025-2026 Jorenar
 -- Copyright 2025 robertogrows
 
 local M = {}
