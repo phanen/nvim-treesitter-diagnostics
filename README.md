@@ -1,6 +1,9 @@
 Neovim Treesitter diagnostics
 =============================
 
+> [!NOTE]
+> modified from https://codeberg.org/Jorenar/nvim-treesitter-diagnostics
+
 Query `ERROR` and `MISSING` nodes from Treesitter to emit Neovim diagnostics about syntax errors
 
 ![screenshot](screenshot.png)
