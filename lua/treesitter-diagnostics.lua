@@ -122,7 +122,9 @@ end
 --- @param buf integer?
 M.enable_buf = function(buf)
   buf = buf or vim.api.nvim_get_current_buf()
-  if not vim.api.nvim_buf_is_valid(buf) then return end
+  if not vim.api.nvim_buf_is_valid(buf) or next(vim.lsp.get_clients({ bufnr = buf })) then
+    return
+  end
 
   -- don't diagnose strange stuff
   if vim.bo[buf].buftype ~= '' then return end
