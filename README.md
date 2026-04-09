@@ -8,12 +8,6 @@ Query `ERROR` and `MISSING` nodes from Treesitter to emit Neovim diagnostics abo
 
 ![screenshot](screenshot.png)
 
-## Setup
-
-```vim
-autocmd FileType * call v:lua.require'treesitter-diagnostics'.enable(bufnr())
-```
-
 ## Acknowledgments
 
 This plugin is a continuation of the idea from [treesitter diagnostics](https://www.reddit.com/r/neovim/comments/1ir069p/treesitter_diagnostics/)
