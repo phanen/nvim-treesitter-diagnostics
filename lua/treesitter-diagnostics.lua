@@ -3,6 +3,7 @@
 -- Copyright 2025 robertogrows
 
 local M = {}
+local fmt = string.format
 
 local NS = vim.api.nvim_create_namespace('editor.treesitter.diagnostics')
 
@@ -65,19 +66,18 @@ local diagnose_syntax = function(parser, query, diagnostics, buf)
 
         if node:missing() then
           diagnostic.severity = vim.diagnostic.severity.WARN
-          diagnostic.code = string.format('%s-missing', parser:lang())
-          diagnostic.message = string.format('missing `%s`', node:type())
+          diagnostic.code = fmt('%s-missing', parser:lang())
+          diagnostic.message = fmt('missing `%s`', node:type())
         else
           diagnostic.severity = vim.diagnostic.severity.ERROR
-          diagnostic.code = string.format('%s-syntax', parser:lang())
+          diagnostic.code = fmt('%s-syntax', parser:lang())
           diagnostic.message = 'error'
         end
 
         -- add context to the error using sibling and parent nodes
         local previous = node:prev_sibling()
         if previous and previous:type() ~= 'ERROR' then
-          local previous_type = previous:named() and previous:type()
-            or string.format('`%s`', previous:type())
+          local previous_type = previous:named() and previous:type() or fmt('`%s`', previous:type())
           diagnostic.message = diagnostic.message .. ' after ' .. previous_type
         end
 
@@ -130,7 +130,7 @@ M.enable_buf = function(buf)
   if vim.bo[buf].buftype ~= '' then return end
 
   local timer = assert(vim.uv.new_timer())
-  local name = string.format('editor.syntax_%d', buf)
+  local name = fmt('editor.syntax_%d', buf)
   local autocmd_group = vim.api.nvim_create_augroup(name, { clear = true })
 
   local run = vim.schedule_wrap(function() diagnose_buffer(buf) end)
