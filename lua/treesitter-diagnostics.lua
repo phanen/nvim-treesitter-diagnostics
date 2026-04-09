@@ -139,10 +139,7 @@ M.enable = function(buf)
     desc = '[treesitter-diagnostics] lint on text modifications',
     buffer = buf,
     group = autocmd_group,
-    callback = function()
-      timer:stop()
-      timer:start(200, 0, run)
-    end,
+    callback = function() timer:start(200, 0, run) end,
   })
 
   vim.api.nvim_create_autocmd({ 'BufUnload' }, {
