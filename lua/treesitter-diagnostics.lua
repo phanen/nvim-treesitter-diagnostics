@@ -105,7 +105,12 @@ end
 
 --- @param buf integer
 local diagnose_buffer = function(buf)
-  if not api.nvim_buf_is_valid(buf) then return end
+  if
+    not api.nvim_buf_is_valid(buf)
+    or next(vim.lsp.get_clients({ bufnr = buf, method = 'textDocument/diagnostic' }))
+  then
+    return
+  end
 
   local parser = vim.treesitter.get_parser(buf, nil, { error = false })
   if not parser then return end
@@ -130,7 +135,6 @@ M.enable_buf = function(buf)
   if
     not api.nvim_buf_is_valid(buf)
     or vim.bo[buf].buftype ~= ''
-    or next(vim.lsp.get_clients({ bufnr = buf }))
     or not diag.is_enabled({ bufnr = buf })
   then
     return
