@@ -120,7 +120,7 @@ local diagnose_buffer = function(buf)
 end
 
 --- @param buf integer?
-M.enable = function(buf)
+M.enable_buf = function(buf)
   buf = buf or vim.api.nvim_get_current_buf()
   if not vim.api.nvim_buf_is_valid(buf) then return end
 
@@ -148,8 +148,16 @@ M.enable = function(buf)
     group = autocmd_group,
     callback = function()
       vim.api.nvim_del_augroup_by_id(autocmd_group)
-      timer:close()
+      if not timer:is_closing() then timer:close() end
     end,
+  })
+end
+
+M.enable = function()
+  vim.api.nvim_create_autocmd({ 'FileType' }, {
+    group = vim.api.nvim_create_augroup('editor.treesitter.diagnostics', { clear = true }),
+    desc = '[treesitter-diagnostics] enable on buffer read',
+    callback = function(args) M.enable_buf(args.buf) end,
   })
 end
 
