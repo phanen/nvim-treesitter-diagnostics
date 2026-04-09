@@ -4,9 +4,10 @@
 
 local M = {}
 local fmt = string.format
+local api = vim.api
 local diag = vim.diagnostic
 
-local NS = vim.api.nvim_create_namespace('editor.treesitter.diagnostics')
+local NS = api.nvim_create_namespace('editor.treesitter.diagnostics')
 
 --- language-independent query for syntax errors and missing elements
 local ERR_N_MISS = vim.treesitter.query.parse('query', '[(ERROR)(MISSING)] @_')
@@ -104,7 +105,7 @@ end
 
 --- @param buf integer
 local diagnose_buffer = function(buf)
-  if not vim.api.nvim_buf_is_valid(buf) or not diag.is_enabled({ bufnr = buf }) then return end
+  if not api.nvim_buf_is_valid(buf) or not diag.is_enabled({ bufnr = buf }) then return end
 
   local parser = vim.treesitter.get_parser(buf, nil, { error = false })
   if not parser then return end
@@ -125,9 +126,9 @@ end
 
 --- @param buf integer?
 M.enable_buf = function(buf)
-  buf = buf or vim.api.nvim_get_current_buf()
+  buf = buf or api.nvim_get_current_buf()
   if
-    not vim.api.nvim_buf_is_valid(buf)
+    not api.nvim_buf_is_valid(buf)
     or next(vim.lsp.get_clients({ bufnr = buf }))
     or vim.bo[buf].buftype ~= ''
   then
@@ -136,33 +137,33 @@ M.enable_buf = function(buf)
 
   local timer = assert(vim.uv.new_timer())
   local name = fmt('editor.syntax_%d', buf)
-  local autocmd_group = vim.api.nvim_create_augroup(name, { clear = true })
+  local autocmd_group = api.nvim_create_augroup(name, { clear = true })
 
   local run = vim.schedule_wrap(function() diagnose_buffer(buf) end)
 
   run()
 
-  vim.api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
+  api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
     desc = '[treesitter-diagnostics] lint on text modifications',
     buffer = buf,
     group = autocmd_group,
     callback = function() timer:start(200, 0, run) end,
   })
 
-  vim.api.nvim_create_autocmd({ 'BufUnload' }, {
+  api.nvim_create_autocmd({ 'BufUnload' }, {
     desc = '[treesitter-diagnostics] destroy linter',
     buffer = buf,
     group = autocmd_group,
     callback = function()
-      vim.api.nvim_del_augroup_by_id(autocmd_group)
+      api.nvim_del_augroup_by_id(autocmd_group)
       if not timer:is_closing() then timer:close() end
     end,
   })
 end
 
 M.enable = function()
-  vim.api.nvim_create_autocmd({ 'FileType' }, {
-    group = vim.api.nvim_create_augroup('editor.treesitter.diagnostics', { clear = true }),
+  api.nvim_create_autocmd({ 'FileType' }, {
+    group = api.nvim_create_augroup('editor.treesitter.diagnostics', { clear = true }),
     desc = '[treesitter-diagnostics] enable on buffer read',
     callback = function(args) M.enable_buf(args.buf) end,
   })
