@@ -28,6 +28,64 @@ local config = {
   },
 }
 
+---@param node TSNode
+---@param parser vim.treesitter.LanguageTree
+---@param diagnostics vim.Diagnostic[]
+---@param buf integer
+local diagnose_node = function(node, parser, diagnostics, buf)
+  local lnum, col, end_lnum, end_col = node:range()
+
+  -- collapse nested syntax errors that occur at the exact same position
+  local parent = node:parent()
+  local is_same = (parent and parent:type() == 'ERROR' and parent:range() == node:range())
+  if is_same then return end
+  -- clamp large syntax error ranges to just the line to reduce noise
+  if end_lnum > lnum then
+    end_lnum = lnum + 1
+    end_col = 0
+  end
+
+  --- @type vim.Diagnostic
+  local diagnostic = {
+    severity = diag.severity.ERROR,
+    source = 'treesitter',
+    lnum = lnum,
+    end_lnum = end_lnum,
+    col = col,
+    end_col = end_col,
+    message = '',
+    bufnr = buf,
+    namespace = NS,
+  }
+
+  if node:missing() then
+    diagnostic.severity = diag.severity.WARN
+    diagnostic.code = fmt('%s-missing', parser:lang())
+    diagnostic.message = fmt('missing `%s`', node:type())
+  else
+    diagnostic.severity = diag.severity.ERROR
+    diagnostic.code = fmt('%s-syntax', parser:lang())
+    diagnostic.message = 'error'
+  end
+
+  -- add context to the error using sibling and parent nodes
+  local previous = node:prev_sibling()
+  if previous and previous:type() ~= 'ERROR' then
+    local previous_type = previous:named() and previous:type() or fmt('`%s`', previous:type())
+    diagnostic.message = diagnostic.message .. (' after ' .. previous_type)
+  end
+
+  if
+    parent
+    and parent:type() ~= 'ERROR'
+    and not (previous and previous:type() == parent:type())
+  then
+    diagnostic.message = diagnostic.message .. (' in ' .. parent:type())
+  end
+
+  diagnostics[#diagnostics + 1] = diagnostic
+end
+
 --- @param parser vim.treesitter.LanguageTree
 --- @param query vim.treesitter.Query
 --- @param diagnostics vim.Diagnostic[]
@@ -38,59 +96,7 @@ local diagnose_syntax = function(parser, query, diagnostics, buf)
   for _, match in query:iter_matches(root, buf) do
     for _, nodes in pairs(match) do
       for _, node in ipairs(nodes) do
-        local lnum, col, end_lnum, end_col = node:range()
-
-        -- collapse nested syntax errors that occur at the exact same position
-        local parent = node:parent()
-        local is_same = (parent and parent:type() == 'ERROR' and parent:range() == node:range())
-        if not is_same then
-          -- clamp large syntax error ranges to just the line to reduce noise
-          if end_lnum > lnum then
-            end_lnum = lnum + 1
-            end_col = 0
-          end
-
-          --- @type vim.Diagnostic
-          local diagnostic = {
-            severity = diag.severity.ERROR,
-            source = 'treesitter',
-            lnum = lnum,
-            end_lnum = end_lnum,
-            col = col,
-            end_col = end_col,
-            message = '',
-            bufnr = buf,
-            namespace = NS,
-          }
-
-          if node:missing() then
-            diagnostic.severity = diag.severity.WARN
-            diagnostic.code = fmt('%s-missing', parser:lang())
-            diagnostic.message = fmt('missing `%s`', node:type())
-          else
-            diagnostic.severity = diag.severity.ERROR
-            diagnostic.code = fmt('%s-syntax', parser:lang())
-            diagnostic.message = 'error'
-          end
-
-          -- add context to the error using sibling and parent nodes
-          local previous = node:prev_sibling()
-          if previous and previous:type() ~= 'ERROR' then
-            local previous_type = previous:named() and previous:type()
-              or fmt('`%s`', previous:type())
-            diagnostic.message = diagnostic.message .. (' after ' .. previous_type)
-          end
-
-          if
-            parent
-            and parent:type() ~= 'ERROR'
-            and not (previous and previous:type() == parent:type())
-          then
-            diagnostic.message = diagnostic.message .. (' in ' .. parent:type())
-          end
-
-          diagnostics[#diagnostics + 1] = diagnostic
-        end
+        diagnose_node(node, parser, diagnostics, buf)
       end
     end
   end
