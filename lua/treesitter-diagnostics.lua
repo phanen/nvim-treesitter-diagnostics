@@ -89,7 +89,7 @@ local diagnose_syntax = function(parser, query, diagnostics, buf)
           diagnostic.message = diagnostic.message .. ' in ' .. parent:type()
         end
 
-        table.insert(diagnostics, diagnostic)
+        diagnostics[#diagnostics + 1] = diagnostic
         ::continue::
       end
     end
