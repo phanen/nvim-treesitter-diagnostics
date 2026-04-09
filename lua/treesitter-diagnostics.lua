@@ -4,6 +4,7 @@
 
 local M = {}
 local fmt = string.format
+local diag = vim.diagnostic
 
 local NS = vim.api.nvim_create_namespace('editor.treesitter.diagnostics')
 
@@ -51,7 +52,7 @@ local diagnose_syntax = function(parser, query, diagnostics, buf)
 
           --- @type vim.Diagnostic
           local diagnostic = {
-            severity = vim.diagnostic.severity.ERROR,
+            severity = diag.severity.ERROR,
             source = 'treesitter',
             lnum = lnum,
             end_lnum = end_lnum,
@@ -63,11 +64,11 @@ local diagnose_syntax = function(parser, query, diagnostics, buf)
           }
 
           if node:missing() then
-            diagnostic.severity = vim.diagnostic.severity.WARN
+            diagnostic.severity = diag.severity.WARN
             diagnostic.code = fmt('%s-missing', parser:lang())
             diagnostic.message = fmt('missing `%s`', node:type())
           else
-            diagnostic.severity = vim.diagnostic.severity.ERROR
+            diagnostic.severity = diag.severity.ERROR
             diagnostic.code = fmt('%s-syntax', parser:lang())
             diagnostic.message = 'error'
           end
@@ -97,9 +98,7 @@ end
 
 --- @param buf integer
 local diagnose_buffer = function(buf)
-  if not vim.api.nvim_buf_is_valid(buf) or not vim.diagnostic.is_enabled({ bufnr = buf }) then
-    return
-  end
+  if not vim.api.nvim_buf_is_valid(buf) or not diag.is_enabled({ bufnr = buf }) then return end
 
   local parser = vim.treesitter.get_parser(buf, nil, { error = false })
   if not parser then return end
@@ -113,8 +112,8 @@ local diagnose_buffer = function(buf)
 
   -- avoid updating in common case of no problems found and no
   -- problems found before (diagnostic updates can be expensive)
-  if #diagnostics > 0 or next(vim.diagnostic.count(buf, { namespace = NS })) then
-    vim.diagnostic.set(NS, buf, diagnostics)
+  if #diagnostics > 0 or next(diag.count(buf, { namespace = NS })) then
+    diag.set(NS, buf, diagnostics)
   end
 end
 
