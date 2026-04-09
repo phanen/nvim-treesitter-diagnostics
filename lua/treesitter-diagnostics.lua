@@ -84,7 +84,7 @@ local diagnose_syntax = function(parser, query, diagnostics, buf)
         if
           parent
           and parent:type() ~= 'ERROR'
-          and (previous == nil or previous:type() ~= parent:type())
+          and not (previous and previous:type() == parent:type())
         then
           diagnostic.message = diagnostic.message .. ' in ' .. parent:type()
         end
@@ -122,12 +122,13 @@ end
 --- @param buf integer?
 M.enable_buf = function(buf)
   buf = buf or vim.api.nvim_get_current_buf()
-  if not vim.api.nvim_buf_is_valid(buf) or next(vim.lsp.get_clients({ bufnr = buf })) then
+  if
+    not vim.api.nvim_buf_is_valid(buf)
+    or next(vim.lsp.get_clients({ bufnr = buf }))
+    or vim.bo[buf].buftype ~= ''
+  then
     return
   end
-
-  -- don't diagnose strange stuff
-  if vim.bo[buf].buftype ~= '' then return end
 
   local timer = assert(vim.uv.new_timer())
   local name = fmt('editor.syntax_%d', buf)
