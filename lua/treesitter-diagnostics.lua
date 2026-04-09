@@ -33,7 +33,7 @@ local config = {
 --- @param buf integer
 local diagnose_syntax = function(parser, query, diagnostics, buf)
   local root = parser:trees()[1]:root()
-  if not root:has_error() or query == NONE then return end
+  if not root:has_error() then return end
   for _, match in query:iter_matches(root, buf) do
     for _, nodes in pairs(match) do
       for _, node in ipairs(nodes) do
@@ -106,7 +106,7 @@ local diagnose_buffer = function(buf)
   if not parser then return end
 
   local query = vim.tbl_get(config, 'parsers', parser:lang()) or ERR_N_MISS
-  if not (query and query ~= NONE) then return end
+  if not query or query == NONE then return end
 
   --- @type vim.Diagnostic[]
   local diagnostics = {}
