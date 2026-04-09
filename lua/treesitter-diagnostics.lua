@@ -98,7 +98,7 @@ end
 
 --- @param buffer integer
 local diagnose_buffer = function(buffer)
-  if not vim.diagnostic.is_enabled({ bufnr = buffer }) then
+  if not vim.api.nvim_buf_is_valid(buffer) or not vim.diagnostic.is_enabled({ bufnr = buffer }) then
     return
   end
 
