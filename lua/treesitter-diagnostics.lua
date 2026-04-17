@@ -7,6 +7,8 @@ local fmt = string.format
 local api = vim.api
 local diag = vim.diagnostic
 
+if vim.fn.has('nvim-0.11') == 0 then return { enable = function() end } end -- query mismatch
+
 local NS = api.nvim_create_namespace('editor.treesitter.diagnostics')
 
 --- language-independent query for syntax errors and missing elements
