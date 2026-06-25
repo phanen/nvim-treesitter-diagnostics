@@ -94,8 +94,10 @@ end
 --- @param diagnostics vim.Diagnostic[]
 --- @param buf integer
 local diagnose_syntax = function(parser, query, diagnostics, buf)
-  local root = parser:trees()[1]:root()
-  if not root:has_error() then return end
+  local tree = parser:trees()[1]
+  if not tree then return end
+  local root = tree:root()
+  if not root or not root:has_error() then return end
   for _, match in query:iter_matches(root, buf) do
     for _, nodes in pairs(match) do
       for _, node in ipairs(nodes) do
